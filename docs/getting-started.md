@@ -155,9 +155,10 @@ pnpm dev        # 启动 Web 应用 http://localhost:5157
 
 打开应用后有两种运行方式：
 
-- **本地预览（Host + 2 玩家）**：单页内用内存 transport 起 1 个房主 + 2 个虚拟玩家，
-  每人一个沙箱 iframe，房间逻辑跑在真实 Web Worker。适合开发调试，DevTools 会显示
-  state / version / 消息日志。
+- **本地预览（Host + 2 位初始玩家）**：单页内用内存 transport 起 1 个房主 + 2 个虚拟玩家，
+  每人一个沙箱 iframe，房间逻辑跑在真实 Web Worker。右上角的「添加设备」可继续加入虚拟
+  玩家（不超过 manifest 的 `maxPlayers`），并选择桌面、平板或手机外框及玩家名称。适合开发
+  调试，DevTools 会显示 state / version / 消息日志。
 - **PeerJS 联机**：先设置运行实例标题和可选 4 位密码，再由房主生成邀请链接。
   房间默认私密；配置大厅服务后可在房主面板公开。**同一份房间代码在两种模式下
   零改动**。
@@ -198,7 +199,9 @@ Room 应用不应硬编码到 Web 的相对路径。`room-*` 的生成目录已�
 完整打包规范（Vite 配置、Worker esbuild 插件、产物契约）见
 [room-dev-harness.md](./room-dev-harness.md)。
 
-本地多人预览中的 Host、Alice、Bob 分别使用桌面、平板和手机比例。三个 iframe 都会
+本地多人预览初始的 Host、Alice、Bob 分别使用桌面、平板和手机比例。调试者可在右上角
+继续添加命名的虚拟设备，并选择其外框比例；新增设备会复用对应初始设备的同一画布尺寸
+（桌面与 Host、平板与 Alice、手机与 Bob 一致），再按密集网格自动排布。所有 iframe 都会
 随页面宽度响应式缩放，用于观察不同布局比例，而不是模拟固定型号或固定像素分辨率。
 
 ### 让自己的房间被官方列表加载

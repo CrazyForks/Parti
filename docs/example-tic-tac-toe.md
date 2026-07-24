@@ -292,8 +292,8 @@ export default defineRoom({
 pnpm dev   # http://localhost:5173
 ```
 
-把上面三个文件放进 `apps/web/public/rooms/tic-tac-toe/`，用「本地预览（Host+2 玩家）」
-即可两个虚拟玩家对弈；或用 PeerJS 模式生成邀请链接真人联机。
+把上面三个文件放进 `apps/web/public/rooms/tic-tac-toe/`，用「本地预览（Host+2 位初始玩家）」
+即可两个虚拟玩家对弈；右上角还可按需添加命名的虚拟设备。或用 PeerJS 模式生成邀请链接真人联机。
 
 ---
 

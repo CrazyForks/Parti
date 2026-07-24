@@ -467,6 +467,21 @@
       "desktop": "桌面",
       "tablet": "平板",
       "mobile": "手机"
+    },
+    "add": {
+      "button": "添加设备",
+      "capacity": "{current} / {max} 个设备",
+      "title": "添加调试设备",
+      "description": "新设备会以独立玩家身份加入同一个本地房间。",
+      "nameLabel": "玩家名称",
+      "deviceLabel": "设备型号",
+      "defaultName": "玩家 {number}",
+      "nameRequired": "请输入玩家名称。",
+      "nameTaken": "该玩家名称已在使用。",
+      "capacityReached": "房间已达到玩家人数上限。",
+      "failed": "添加设备失败：{error}",
+      "cancel": "取消",
+      "confirm": "添加设备"
     }
   },
   "devTools": {
