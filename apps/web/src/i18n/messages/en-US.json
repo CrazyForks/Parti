@@ -467,6 +467,21 @@
       "desktop": "Desktop",
       "tablet": "Tablet",
       "mobile": "Mobile"
+    },
+    "add": {
+      "button": "Add device",
+      "capacity": "{current} / {max} devices",
+      "title": "Add debug device",
+      "description": "The new device joins this local room as an independent player.",
+      "nameLabel": "Player name",
+      "deviceLabel": "Device model",
+      "defaultName": "Player {number}",
+      "nameRequired": "Enter a player name.",
+      "nameTaken": "That player name is already in use.",
+      "capacityReached": "The room has reached its player limit.",
+      "failed": "Could not add device: {error}",
+      "cancel": "Cancel",
+      "confirm": "Add device"
     }
   },
   "devTools": {
