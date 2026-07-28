@@ -183,18 +183,54 @@ interface PartiAgentBridge {
   `#parti-agent-guide`、`#parti-agent-status`），供只读 DOM 或截图型 agent 使用——
   这也是「转述写得好，截图型 agent 也受益」的原因。
 
-**推荐游玩流程**（agent 侧）：连上 → `ready()` → 读 `describe()` 理解局面与合法操作
-（为 `null` 则读 `getState()`）→ 决策 → `action()` → 等 `stateVersion` 变化或新事件 → 重复。
+**推荐游玩流程**（agent 侧）：邀请提示词不再要求 agent 临场编写 Playwright 代码。Parti
+在站点同路径托管 `parti-agent-runner.mjs`；提示词会给出经过 shell 转义的下载和启动
+命令。运行器负责创建独立浏览器、连接、`ready()`、读取转述、排空事件、等待状态变化和
+释放资源，agent 只通过同一个 PTY/session 收发 JSONL。
 
-```js
-const { chromium } = require('playwright');
-const page = await (await (await chromium.launch()).newContext()).newPage();
-await page.goto(AGENT_URL);
-await page.waitForFunction(() => window.__partiAgent?.status() === 'connected');
-await page.evaluate(() => window.__partiAgent.ready());
-const guide = await page.evaluate(() => window.__partiAgent.describe()); // ← 你的转述
-// 决策后：await page.evaluate(() => window.__partiAgent.action('mark', { cell: 4 }));
+运行器要求 Node 20+，并从启动目录加载已经安装的 `playwright` 与 Chromium；它不会
+自动下载或安装依赖。若 `require.resolve('playwright')` 失败，应先切换到本机已有的
+Playwright Node 项目再启动。启动后首先输出 `hello`，其中 `protocol` 当前为 `2`。主要输出为：
+
+- `update`：局面变化时携带完整 `description`，房间没有转述时则为完整 `state`；仅有
+  新事件时使用 `source: "events"`，不重复附带未变化的旧局面；
+- `ack`：命令或动作已发出，动作是否生效仍须看后续 `update`；
+- `heartbeat`：房间仍在线，但暂时没有与决策相关的变化；
+- `attention`：连接错误或关闭，运行器保持存活，等待 agent 决定重试或停止；
+- `terminal`：运行器已按明确的停止命令清理浏览器，agent 才可结束任务。
+
+为降低无头 WebGL 软件渲染的负载，runner 将页面和 iframe 的动画帧率限制为最高 2 FPS，
+并使用较小 viewport 与 reduced-motion。它不禁用 WebGL，也不修改房间状态或转述内容。
+
+启动运行器时不能使用会一直等待进程结束的普通 shell 调用，否则 agent 会失去继续读取和
+决策的机会。支持持续 PTY/session 的工具应让首次调用尽快返回 session ID，之后用短时间、
+有界的 session read 和 stdin write 交替操作。对于不支持持续 stdin 的工具，运行器支持
+`--commands-file <path>`：将它作为后台进程启动并把 stdout 重定向到事件日志，agent 用
+`--read-events <log> --cursor-file <cursor>` 只读取新增的完整 JSONL 行，再将命令原子追加
+到命令文件。不要重复读取整个日志或使用阻塞式 `tail -f`。
+
+PTY 模式下 runner 会尽量关闭终端输入回显，使静默 keepalive 不会被伪终端原样复制到输出；
+不支持调整终端模式的宿主仍可改用命令文件模式。
+
+agent 每次根据最新 `update` 亲自决定至多一个动作，并逐行写入 stdin：
+
+```json
+{"type":"keepalive"}
+{"type":"action","name":"mark","payload":{"cell":4}}
+{"type":"inspect","includeState":true}
+{"type":"retry"}
+{"type":"stop","reason":"房间返回 closed，确认已永久关闭"}
 ```
+
+keepalive 是静默命令。agent 在等待期间至少每 60 秒发送一次；连续 120 秒没有 keepalive
+或其他有效命令时，runner 会关闭浏览器并输出 `controller-idle` attention，以免 agent
+任务中断后遗留高负载 Chromium。agent 返回后发送 retry 即可重新加入。
+
+运行器不包含任何游戏决策或自动回复逻辑，也不执行 stdin 中的代码。它会合并短时间内的
+连续状态变化，转述没有语义变化时不重复输出大对象，并用紧凑 heartbeat 表示仍在等待。
+单局结算、暂时没有合法操作或长时间没有玩家行动都不等于房间失效；agent 应保持 session，
+继续等待后续回合。网络类或含义不明确的错误应 `retry`，只有 `closed` 或明确的永久失效
+证据才应 `stop`，且必须等到 `terminal` 后才能结束。
 
 - agent 占用一个正常的玩家席位，受房间 `maxPlayers` 与准入（密码）约束；有密码时链接
   自带 `?password=`。
